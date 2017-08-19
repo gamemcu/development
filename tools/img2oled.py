@@ -126,7 +126,10 @@ class FileNameListAction(argparse.Action):
         super(FileNameListAction, self).__init__(option_strings, dest, nargs, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        setattr(namespace, self.dest, values)
+        mask_list = []
+        for v in values:
+            mask_list.append(v)
+        setattr(namespace, self.dest, mask_list)
 
 
 if __name__ == '__main__':
@@ -136,7 +139,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--mode',   default=1,            help='mode of decode, default is 0, 0:row, 1: column')
     parser.add_argument('-p', '--prefix', default='assert_',    help='prefix of generated code')
     parser.add_argument('-g', '--debug',  action='store_false', help='debug, default is true')
-    parser.add_argument('-l', '--list',   metavar='<filename>', help='need mask filename list, separated by space',action=FileNameListAction)
+    parser.add_argument('-l', '--list',   default=[], metavar='<filename>', help='need mask filename list, separated by space',action=FileNameListAction)
     args = parser.parse_args()
     if args.src is None:
         sys.stderr.write('you must input the srcource directory of input files\n')
