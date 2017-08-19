@@ -1,6 +1,13 @@
+#!/usr/bin/env python
+
 import sys
 import argparse
-import Image,ImageDraw,glob,os,re
+try:
+    import Image,ImageDraw
+except Exception as e:
+    from PIL import Image,ImageDraw
+
+import glob,os,re
 from os.path import basename,splitext
 
 def getsize(name,w,h):
@@ -134,7 +141,9 @@ if __name__ == '__main__':
     if args.src is None:
         sys.stderr.write('you must input the srcource directory of input files\n')
         sys.exit(0)
-    for name in glob.glob(os.path.join(args.src,'*')):
+    if os.path.isdir(args.src):
+        args.src = os.path.join(args.src,'*')
+    for name in glob.glob(args.src):
         if not name.endswith('.png'):
             continue
         im = Image.open(name)
@@ -151,3 +160,4 @@ if __name__ == '__main__':
             ret=decode1(w,h,data)
         s=gencode(args.prefix+func_name,frames,w,h,ret)
         print s
+
