@@ -158,7 +158,6 @@ if __name__ == '__main__':
         func_name,ext=splitext(basename(name))
         func_name=func_name.replace('-', '_')
         data = list(im.getdata())
-        print(data)
         if (name in args.list) and (im.mode=='RGBA'):
             ret=decode2(w,h,data)
         else:
