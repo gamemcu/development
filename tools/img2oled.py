@@ -70,7 +70,7 @@ def decode1(w,h,data):
             kk=k
             v=0
             for i in range(imax):
-                if (data[kk+x][3] == 255) and (data[kk+x][0] == 255):
+                if not (data[kk+x][3] == 255 and data[kk+x][0] == 0):
                     v|=1<<i
                 kk+=w
             ret.append(v)
@@ -88,11 +88,12 @@ def decode2(w,h,data):
         for x in range(w):
             kk=k
             v=0
-            v1=0xff
+            v1=0
             for i in range(imax):
-                if (data[kk+x][3] == 255) and (data[kk+x][0] == 255):
-                    v|=(data[k+x][0]&1)<<i
-                    v1&=~(1<<i)
+                if data[kk+x][3] == 0:
+                    v1|=1<<i
+                elif data[kk+x][0] == 255:
+                    v|=1<<i
                 kk+=w
             ret.append(v)
             ret.append(v1)
@@ -137,7 +138,7 @@ if __name__ == '__main__':
     parser.add_argument('-s', '--src',    default=None,         help='srcource directory of input files ')
     parser.add_argument('-d', '--dest',   default=None,         help='destination directory of output file')
     parser.add_argument('-m', '--mode',   default=1,            help='mode of decode, default is 0, 0:row, 1: column')
-    parser.add_argument('-p', '--prefix', default='assert_',    help='prefix of generated code')
+    parser.add_argument('-p', '--prefix', default='asset_',    help='prefix of generated code')
     parser.add_argument('-g', '--debug',  action='store_false', help='debug, default is true')
     parser.add_argument('-l', '--list',   default=[], metavar='<filename>', help='need mask filename list, separated by space',action=FileNameListAction)
     args = parser.parse_args()
@@ -156,10 +157,11 @@ if __name__ == '__main__':
         name=basename(name)
         func_name,ext=splitext(basename(name))
         func_name=func_name.replace('-', '_')
+        data = list(im.getdata())
+        print(data)
         if (name in args.list) and (im.mode=='RGBA'):
-            ret=decode2(w,h,list(im.getdata()))
+            ret=decode2(w,h,data)
         else:
-            data = list(im.getdata())
             ret=decode1(w,h,data)
         s=gencode(args.prefix+func_name,frames,w,h,ret)
         print s
