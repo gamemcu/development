@@ -14,8 +14,8 @@ def getsize(name,w,h):
     r=re.findall(r'(\d+)x(\d+).',name) or [(w,h)]
     return int(r[0][0]),int(r[0][1])
 
-def gencode(name,frames,w,h,data):
-    s = str.format('%s = string.char(0x%02x,0x%02x,0x%02x,\n'%(name,ew,eh,frames))
+def gencode(name,frames,color,w,h,data):
+    s = str.format('%s = string.char(0x%02x,0x%02x,0x%02x,0x%02x,\n'%(name,ew,eh,frames,color))
     rlen = len(data)
     line = 0
     for i in range(0, rlen):
@@ -100,19 +100,46 @@ def decode2(w,h,data):
         y+=8
     return ret
 
-def rearrange(w,h,ew,eh,data):
+DRAW_NORMAL = 1 << 0
+DRAW_MASK = 1 << 1
+DRAW_REVERSE = 1 << 2
+DRAW_TRANSPARENCY = 1 << 3
+DRAW_GRAY = 1 << 4
+
+def decode3(w,h,data,mode='RGBA'):
+    color = DRAW_NORMAL
+    for d in data:
+        if mode == 'RGBA' and d[3] == 0:
+            color |= DRAW_MASK
+        elif (d[0] > 0) and (d[0] < 255):
+            pass
+            # color |= DRAW_GRAY
     ret=[]
-    n=w*eh
-    nw=w/ew
-    nh=h/eh
-    for k in range(nh):
-        for i in range(nw):
-            for y in range(eh):
-                for x in range(ew):
-                    ret.append(data[y*w+x+i*ew+k*n])
-    w=ew
-    h=nw*eh*nh
-    return w,h,ret
+    y=0
+    imax=8
+    while y<h:
+        k=y*w
+        if y+8>h:
+            imax=h&7
+        for x in range(w):
+            kk=k
+            v, v1, v2=0, 0, 0
+            for i in range(imax):
+                if mode == 'RGBA' and data[kk+x][3] == 0: #mask
+                    v2|=1<<i
+                    v|=1<<i
+                elif data[kk+x][0] == 255: #white
+                    v|=1<<i
+                elif data[kk+x][0] > 0: #gray
+                    v1|=1<<i
+                kk+=w
+            ret.append(v)
+            if color & DRAW_GRAY:
+                ret.append(v1)
+            if color & DRAW_MASK:
+                ret.append(v2)
+        y+=8
+    return ret, color
 
 def getmono(fp,size=None):
     im = Image.open(fp)
@@ -158,10 +185,9 @@ if __name__ == '__main__':
         func_name,ext=splitext(basename(name))
         func_name=func_name.replace('-', '_')
         data = list(im.getdata())
-        if (name in args.list) and (im.mode=='RGBA'):
-            ret=decode2(w,h,data)
-        else:
-            ret=decode1(w,h,data)
-        s=gencode(args.prefix+func_name,frames,w,h,ret)
+        # if (name in args.list) and (im.mode=='RGBA'):
+        #     ret=decode2(w,h,data)
+        # else:
+        ret, color=decode3(w,h,data,im.mode)
+        s=gencode(args.prefix+func_name,frames,color,w,h,ret)
         print s
-
