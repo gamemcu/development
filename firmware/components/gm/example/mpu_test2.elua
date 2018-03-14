@@ -1,0 +1,160 @@
+require('assets')
+print(gm.version())
+gm.set_fps(100)
+gm.show_fps(1)
+local aircraft2 = gm.create_sprite(asset_aircraft2, 30, 0, 1)
+local aircraft = gm.create_sprite(asset_aircraft, 24, 60, 1)
+local planet = gm.create_sprite(asset_planet_32x32, 70, 40, 1)
+local satellite = gm.create_sprite(asset_satellite, 30, 15, 1)
+local plane = gm.create_sprite(asset_plane_15x16, 60, 30, 2):set_friction{x = 1, y = 1}
+local starsky = gm.create_starsky(15, 0)
+local starsky1 = gm.create_starsky(10, 2)
+local layer = gm.create_layer():add(aircraft2, aircraft, planet, satellite, plane, starsky, starsky1)
+local scene = gm.create_scene():add(layer)
+local bullets = {}
+scene:add(gm.create_listener(gm.INPUT, function(input)
+    if not input.d then
+        gm.tone(880, 40)
+        gm.led{color = {10, 0, 0, 10, 0, 0}, dura = 100}
+        local x, y = plane:get_pos()
+        local speed = plane:get_speed()
+        local frame = plane:get_frame()
+        if frame == 0 then --up
+            x = x + 6
+            speed.y = -256
+        elseif frame == 1 then --up right
+            x = x + 15
+            speed.x = 181
+            speed.y = -181
+        elseif frame == 2 then --right
+            x = x + 15
+            y = y + 7
+            speed.x = 256
+        elseif frame == 3 then --down right
+            x = x + 15
+            y = y + 16
+            speed.x = 181
+            speed.y = 181
+        elseif frame == 4 then --down
+            x = x + 6
+            y = y + 16
+            speed.y = 256
+        elseif frame == 5 then --down left
+            x = x - 6
+            y = y + 16
+            speed.x = -181
+            speed.y = 181
+        elseif frame == 6 then --left
+            y = y + 7
+            speed.x = -256
+        elseif frame == 7 then --up left
+            x = x - 4
+            speed.x = -181
+            speed.y = -181
+        end
+        local bullet = gm.create_sprite(asset_bullet_3x8, x, y, 3)
+        :set_frame(3)
+        :set_maxspeed{x = 300, y = 300}
+        :set_speed(speed)
+        layer:add(bullet)
+        bullets[bullet:id()] = bullet
+    end
+end))
+-- scene:add(gm.create_listener(gm.COLLIDE, function(a, b)
+--     if bullets[a] then
+--         layer:remove(bullets[a])
+--         bullets[a] = nil
+--         if aircraft:id() == b then
+--             layer:remove(aircraft)
+--         end
+--     end
+--     if bullets[b] then
+--         layer:remove(bullets[b])
+--         bullets[b] = nil
+--         if aircraft:id() == a then
+--             layer:remove(aircraft)
+--         end
+--     end
+-- end))
+
+scene:add(gm.create_schduler(gm.SCH_ONCE, 2000, function() 
+    print('SCH_ONCE')
+end)) 
+
+local frame = 0
+scene:add(gm.create_schduler(gm.SCH_CONTINUE, 125, function() 
+    frame = (frame + 1) % 5
+    planet:set_frame(frame)
+end)) 
+
+local function bullets_update(void)
+    local camx, camy = gm.get_camera_pos()
+    for k, v in pairs(bullets) do
+        local x, y = v:get_pos()
+        x = x - camx
+        y = y - camy
+        if (x < 0) or (x > 128) or (y < 0) or (y > 64) then
+            layer:remove(v)
+            bullets[k] = nil
+        end
+    end
+end
+
+local acc = 4
+scene:add(gm.create_schduler(gm.SCH_CONTINUE, 100, function() 
+    bullets_update()
+    local speed = plane:get_speed()
+    plane:set_speed(speed)
+    satellite:set_speed(speed)
+    speed.x = speed.x * 3 / 4
+    speed.y = speed.y * 3 / 4
+    starsky1:set_speed(speed)
+    planet:set_speed(speed)
+    aircraft:set_speed(speed)
+    local pitch, roll, yaw = gm.read_angle()
+    local dir = 0
+    if pitch < - 4 then
+        dir = dir + 1
+    elseif pitch > 4 then
+        dir = dir + 2
+    else
+        plane:set_acc{ x = 0 }
+    end
+    
+    if roll < - 4 then
+        dir = dir + 4
+    elseif roll >  4 then
+        dir = dir + 8 
+    else
+        plane:set_acc{ y = 0 }
+    end
+    
+    if dir == 1 then -- left
+        plane:set_frame(6)
+        plane:set_acc{ x = - acc }
+    elseif dir == 2 then --right
+        plane:set_frame(2)
+        plane:set_acc{ x = acc }
+    elseif dir == 4 then --up
+        plane:set_frame(0)
+        plane:set_acc{ y = - acc }
+    elseif dir == 5 then --left up
+        plane:set_frame(7)
+        plane:set_acc{ x = - acc / 2, y = - acc / 2}
+    elseif dir == 6 then -- right up
+        plane:set_frame(1)
+        plane:set_acc{ x = acc / 2, y = - acc / 2}
+    elseif dir == 8 then --down
+        plane:set_frame(4)
+        plane:set_acc{ y = acc}
+    elseif dir == 9 then -- left down
+        plane:set_frame(5)
+        plane:set_acc{ x = - acc / 2, y = acc / 2}
+    elseif dir == 10 then -- right down
+        plane:set_frame(3)
+        plane:set_acc{ x = acc / 2, y = acc / 2}
+    end
+end))
+
+gm.focus(plane, 60, 30)
+gm.replace_scene(scene)

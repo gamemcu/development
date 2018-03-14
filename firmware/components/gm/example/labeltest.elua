@@ -1,0 +1,3 @@
+local label = gm.create_label('gameover')
+local scene = gm.create_scene():add(label)
+gm.replace_scene(scene)

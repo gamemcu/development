@@ -1,0 +1,3 @@
+gm.setup_mpu({i2c = i2c.HW0, intr = 21, sclk = 16, sda = 17, speed = i2c.FAST, reinit = 1})
+gm.setup_input({x = 6, y = 7, a = 32, b = 33, c = 26, d = 27, reinit = 1})
+gm.setup_lcd({host = spi.VSPI, sclk = 18, mosi = 23, cs = 5, dc = 12, rst = 14, reinit = 1})

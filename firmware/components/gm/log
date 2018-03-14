@@ -1,0 +1,8 @@
+ERR:
+	LoadProhibited: free invalid pointer
+	InstrFetchProhibited: use invalid pointer
+
+OLED:
+	oled update rate is limited by his fosc about 377khz, fram about 104hz, so the max fps is about less 100hz.
+
+	and u can not control ic scan when start or when end, although fram is 104hz, fps can not reach 104hz at last

@@ -1,0 +1,44 @@
+require('assets')
+print('gamemcu version', gm.version())
+gm.setup_mpu({i2c = i2c.HW0, intr = 21, sclk = 16, sda = 17, speed = i2c.FAST})
+gm.setup_input({x = 6, y = 7, a = 32, b = 33, c = 26, d = 27})
+gm.setup_lcd({host = spi.VSPI, sclk = 18, mosi = 23, cs = 5, dc = 12, rst = 14})
+local plane = gm.create_sprite(asset_plane_15x16, 70, 20, 2)
+local tank1 = gm.create_sprite(asset_tank1, 0, 20, 2)
+local layer = gm.create_layer()
+print(layer:add_child(gm.create_sprite(asset_base, 10, 0, - 1), plane, tank1))
+local scene = gm.create_scene()
+print(scene:add_child(layer))
+print(gm.replace_scene(scene)) 
+-- print(scene:remove_child(0))
+-- print(scene:add_listener(gm.create_listener(gm.INPUT, function(input)
+--     -- print(input.up, input.down, input.left, input.right, input.a, input.b, input.c, input.d)
+-- end)))
+
+-- scene:add_schduler(gm.create_schduler(gm.SCH_CONTINUE, 1000, function() 
+--     print(gm.get_fps())
+--     -- print(gm.read_mpu())
+-- end))
+
+scene:add_schduler(gm.create_schduler(gm.SCH_CONTINUE, 40, function() 
+    local input = gm.read_input()
+    local speed = 128
+    if input.up then
+        plane:set_frame(0)
+        plane:set_yspeed(-speed)
+    elseif input.down then
+        plane:set_frame(2)
+        plane:set_yspeed(speed)
+    else
+        plane:set_yspeed(0)
+    end
+    if input.left then
+        plane:set_frame(3)
+        plane:set_xspeed(-speed)
+    elseif input.right then
+        plane:set_frame(1)
+        plane:set_xspeed(speed)
+    else
+        plane:set_xspeed(0)
+    end
+end))
